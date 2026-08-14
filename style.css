@@ -175,6 +175,21 @@ h2.section {
   border: 1.5px solid color-mix(in srgb, var(--card-color) 45%, transparent);
 }
 
+.dose-chip.due {
+  background: linear-gradient(135deg, var(--danger), #991b1b);
+  box-shadow: 0 6px 16px -6px rgba(220, 38, 38, 0.65);
+  animation: pulse-due 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dose-chip.due { animation: none; }
+}
+
+@keyframes pulse-due {
+  0%, 100% { box-shadow: 0 6px 16px -6px rgba(220, 38, 38, 0.65); }
+  50% { box-shadow: 0 6px 22px -3px rgba(220, 38, 38, 0.9); }
+}
+
 .dose-chip:active { transform: scale(0.94); }
 
 .med-info { min-width: 0; }

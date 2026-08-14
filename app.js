@@ -106,7 +106,9 @@ function renderToday() {
           .map((time, i) => {
             const key = logKey(med.id, i, today);
             const isLogged = !!logs[key];
-            return `<button class="dose-chip ${isLogged ? 'logged' : ''}" data-key="${key}">${isLogged ? `✓ TAKEN · ${formatTime(time)}` : formatTime(time)}</button>`;
+            const isDue = !isLogged && time <= nowHHMM;
+            const label = isLogged ? `✓ TAKEN · ${formatTime(time)}` : isDue ? `⚠ DUE · ${formatTime(time)}` : formatTime(time);
+            return `<button class="dose-chip ${isLogged ? 'logged' : ''} ${isDue ? 'due' : ''}" data-key="${key}">${label}</button>`;
           })
           .join('')}
       </div>
