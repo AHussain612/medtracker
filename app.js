@@ -1,6 +1,10 @@
 const COLORS = [
   { name: 'teal', hex: '#0d9488' },
+  { name: 'sky', hex: '#0369a1' },
+  { name: 'indigo', hex: '#4338ca' },
+  { name: 'violet', hex: '#7e22ce' },
   { name: 'pink', hex: '#db2777' },
+  { name: 'rose', hex: '#be123c' },
   { name: 'gold', hex: '#b45309' },
   { name: 'green', hex: '#059669' },
 ];
@@ -102,7 +106,7 @@ function renderToday() {
           .map((time, i) => {
             const key = logKey(med.id, i, today);
             const isLogged = !!logs[key];
-            return `<button class="dose-chip ${isLogged ? 'logged' : ''}" data-key="${key}">${formatTime(time)}${isLogged ? ' ✓' : ''}</button>`;
+            return `<button class="dose-chip ${isLogged ? 'logged' : ''}" data-key="${key}">${isLogged ? `✓ TAKEN · ${formatTime(time)}` : formatTime(time)}</button>`;
           })
           .join('')}
       </div>
@@ -150,6 +154,36 @@ function renderToday() {
       }
     });
   });
+}
+
+function renderUpcoming() {
+  const medicines = getMedicines();
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  document.getElementById('upcoming-date').textContent =
+    'Tomorrow · ' + tomorrow.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+
+  const doses = [];
+  medicines.forEach((med) => {
+    med.times.forEach((time) => doses.push({ med, time }));
+  });
+  doses.sort((a, b) => a.time.localeCompare(b.time));
+
+  const list = document.getElementById('upcoming-list');
+  if (doses.length === 0) {
+    list.innerHTML = '<li class="upcoming-empty">Nothing scheduled.</li>';
+    return;
+  }
+  list.innerHTML = doses
+    .map(
+      ({ med, time }) => `
+    <li class="upcoming-item">
+      <span class="med-dot" style="background:${med.color}"></span>
+      ${escapeHtml(med.name)}
+      <span class="upcoming-time">${formatTime(time)}</span>
+    </li>`
+    )
+    .join('');
 }
 
 // --- Calendar screen ---
@@ -462,6 +496,7 @@ function escapeHtml(str) {
 
 function renderAll() {
   renderToday();
+  renderUpcoming();
   renderCalendar();
   updateBanner();
 }

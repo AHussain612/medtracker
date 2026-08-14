@@ -134,10 +134,14 @@ h2.section {
   border: none;
   background: none;
   color: var(--text-faint);
-  font-size: 15px;
-  padding: 6px 7px;
+  font-size: 20px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 10px;
   line-height: 1;
 }
 
@@ -235,6 +239,43 @@ h2.section {
   margin-top: 40px;
   font-size: 14px;
   line-height: 1.6;
+}
+
+.upcoming-section {
+  margin-top: 28px;
+  opacity: 0.6;
+}
+
+.upcoming-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.upcoming-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.upcoming-time {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.upcoming-empty {
+  list-style: none;
+  font-size: 13px;
+  color: var(--on-grad-muted);
 }
 
 /* Calendar */
@@ -452,7 +493,7 @@ h2.section {
   font-family: inherit;
 }
 
-.swatches { display: flex; gap: 10px; margin-top: 4px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
 .swatch {
   width: 30px;
   height: 30px;
