@@ -17,26 +17,23 @@
   <div id="app">
     <div id="banner" class="banner hidden"></div>
 
-    <!-- HOME -->
-    <section class="screen active" id="screen-home">
-      <h1 class="title">Manage Medications</h1>
-      <h2 class="section">Today's Medications</h2>
-      <ul class="med-list" id="home-list"></ul>
+    <!-- TODAY (medicines list + today's doses, combined) -->
+    <section class="screen active" id="screen-today">
+      <p class="eyebrow" id="today-date"></p>
+      <h1 class="title">Today's Schedule</h1>
+      <ul class="med-list" id="today-list"></ul>
       <button class="add-btn" id="add-medicine-btn">+ &nbsp;Add Medicine</button>
-    </section>
-
-    <!-- SCHEDULE -->
-    <section class="screen" id="screen-schedule">
-      <p class="eyebrow" id="schedule-month"></p>
-      <h1 class="title" style="font-size:24px;">Today's Schedule</h1>
-      <h2 class="section" style="margin-bottom:10px;">Doses due today</h2>
-      <ul class="med-list" id="schedule-list"></ul>
     </section>
 
     <!-- CALENDAR -->
     <section class="screen" id="screen-calendar">
       <p class="eyebrow" id="cal-month-label"></p>
-      <h1 class="title" style="font-size:24px;" id="cal-month-title">Calendar</h1>
+      <div class="cal-nav">
+        <button class="cal-nav-btn" id="cal-prev" aria-label="Previous month">‹</button>
+        <h1 class="title" id="cal-month-title">Calendar</h1>
+        <button class="cal-nav-btn" id="cal-next" aria-label="Next month">›</button>
+      </div>
+      <p class="cal-summary" id="cal-summary"></p>
       <div class="cal-grid" id="cal-dow-row"></div>
       <div class="cal-grid" id="cal-grid"></div>
       <div class="legend" id="cal-legend"></div>
@@ -44,13 +41,9 @@
 
     <!-- TAB BAR -->
     <nav class="tabbar">
-      <button class="tab active" data-tab="home">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
-        Home
-      </button>
-      <button class="tab" data-tab="schedule">
+      <button class="tab active" data-tab="today">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
-        Schedule
+        Today
       </button>
       <button class="tab" data-tab="calendar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
@@ -62,7 +55,7 @@
     <div class="sheet-overlay" id="add-sheet-overlay">
       <div class="sheet">
         <div class="sheet-handle"></div>
-        <h3>Add Medicine</h3>
+        <h3 id="sheet-title">Add Medicine</h3>
         <div class="field">
           <label for="input-name">Name</label>
           <input id="input-name" placeholder="e.g. Vitamin D3" />

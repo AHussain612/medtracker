@@ -54,62 +54,19 @@ function formatTime(hhmm) {
   return `${hour12}:${String(m).padStart(2, '0')} ${period}`;
 }
 
-// --- Home screen ---
+// --- Today screen (medicines + today's doses, grouped by medicine) ---
 
-function renderHome() {
-  const medicines = getMedicines();
-  const list = document.getElementById('home-list');
-
-  if (medicines.length === 0) {
-    list.innerHTML = '<li class="empty-state">No medicines yet.<br>Tap "+ Add Medicine" to start tracking.</li>';
-    return;
-  }
-
-  list.innerHTML = '';
-  medicines.forEach((med) => {
-    const li = document.createElement('li');
-    li.className = 'med-card';
-    li.style.setProperty('--card-color', med.color);
-    li.innerHTML = `
-      <div class="med-info">
-        <div class="med-name"><span class="med-dot"></span>${escapeHtml(med.name)}</div>
-        <div class="med-dose">${escapeHtml(med.dose || '')}${med.dose ? ' · ' : ''}${med.times.length}x daily</div>
-      </div>
-      <button class="delete-btn" data-id="${med.id}" aria-label="Delete ${escapeHtml(med.name)}">&times;</button>
-    `;
-    list.appendChild(li);
-  });
-
-  list.querySelectorAll('.delete-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const med = medicines.find((m) => m.id === btn.dataset.id);
-      if (confirm(`Remove "${med.name}" from your list?`)) {
-        saveMedicines(medicines.filter((m) => m.id !== med.id));
-        renderAll();
-      }
-    });
-  });
-}
-
-// --- Schedule screen ---
-
-function renderSchedule() {
-  document.getElementById('schedule-month').textContent =
+function renderToday() {
+  document.getElementById('today-date').textContent =
     new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
   const medicines = getMedicines();
   const logs = getLogs();
   const today = todayString();
-  const list = document.getElementById('schedule-list');
+  const list = document.getElementById('today-list');
 
-  const doses = [];
-  medicines.forEach((med) => {
-    med.times.forEach((time, i) => doses.push({ med, time, timeIndex: i }));
-  });
-  doses.sort((a, b) => a.time.localeCompare(b.time));
-
-  if (doses.length === 0) {
-    list.innerHTML = '<li class="empty-state">No doses scheduled.<br>Add a medicine to see it here.</li>';
+  if (medicines.length === 0) {
+    list.innerHTML = '<li class="empty-state">No medicines yet.<br>Tap "+ Add Medicine" to start tracking.</li>';
     return;
   }
 
@@ -117,27 +74,37 @@ function renderSchedule() {
   const nowHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
   list.innerHTML = '';
-  doses.forEach(({ med, time, timeIndex }) => {
-    const key = logKey(med.id, timeIndex, today);
-    const isLogged = !!logs[key];
-    const isOverdue = !isLogged && time <= nowHHMM;
+  medicines.forEach((med) => {
+    const anyOverdue = med.times.some((time, i) => time <= nowHHMM && !logs[logKey(med.id, i, today)]);
 
     const li = document.createElement('li');
-    li.className = `med-card${isOverdue ? ' overdue' : ''}`;
+    li.className = `med-card${anyOverdue ? ' overdue' : ''}`;
     li.style.setProperty('--card-color', med.color);
     li.innerHTML = `
-      <div class="med-info">
-        <div class="med-name"><span class="med-dot"></span>${escapeHtml(med.name)} <span style="color:var(--text-muted);font-weight:500;">${escapeHtml(med.dose || '')}</span></div>
-        <div class="med-time">${formatTime(time)}</div>
+      <div class="med-card-header">
+        <div class="med-info">
+          <div class="med-name"><span class="med-dot"></span>${escapeHtml(med.name)}</div>
+          <div class="med-dose">${escapeHtml(med.dose || '')}${med.dose ? ' · ' : ''}${med.times.length}x daily</div>
+        </div>
+        <div class="med-actions">
+          <button class="icon-btn edit-btn" data-id="${med.id}" aria-label="Edit ${escapeHtml(med.name)}">✎</button>
+          <button class="icon-btn delete-btn" data-id="${med.id}" aria-label="Delete ${escapeHtml(med.name)}">&times;</button>
+        </div>
       </div>
-      <button class="log-btn ${isLogged ? 'logged' : ''}" data-key="${key}">
-        ${isLogged ? '✓ LOGGED' : 'LOG DOSE'}
-      </button>
+      <div class="dose-chips">
+        ${med.times
+          .map((time, i) => {
+            const key = logKey(med.id, i, today);
+            const isLogged = !!logs[key];
+            return `<button class="dose-chip ${isLogged ? 'logged' : ''}" data-key="${key}">${formatTime(time)}${isLogged ? ' ✓' : ''}</button>`;
+          })
+          .join('')}
+      </div>
     `;
     list.appendChild(li);
   });
 
-  list.querySelectorAll('.log-btn').forEach((btn) => {
+  list.querySelectorAll('.dose-chip').forEach((btn) => {
     btn.addEventListener('click', () => {
       const logs = getLogs();
       const key = btn.dataset.key;
@@ -147,10 +114,23 @@ function renderSchedule() {
         logs[key] = true;
       }
       saveLogs(logs);
-      renderSchedule();
-      renderHome();
+      renderToday();
       renderCalendar();
       updateBanner();
+    });
+  });
+
+  list.querySelectorAll('.edit-btn').forEach((btn) => {
+    btn.addEventListener('click', () => openAddSheet(btn.dataset.id));
+  });
+
+  list.querySelectorAll('.delete-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const med = medicines.find((m) => m.id === btn.dataset.id);
+      if (confirm(`Remove "${med.name}" from your list?`)) {
+        saveMedicines(medicines.filter((m) => m.id !== med.id));
+        renderAll();
+      }
     });
   });
 }
@@ -185,11 +165,30 @@ function dayData(dateStr) {
   return doses;
 }
 
+function monthSummary() {
+  const today = todayString();
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  let total = 0;
+  let taken = 0;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = todayString(new Date(calendarYear, calendarMonth, d));
+    if (dateStr > today) continue;
+    const dueDoses = dayData(dateStr).filter((x) => x.status !== 'upcoming');
+    total += dueDoses.length;
+    taken += dueDoses.filter((x) => x.taken).length;
+  }
+  return { total, taken };
+}
+
 function renderCalendar() {
   const monthDate = new Date(calendarYear, calendarMonth, 1);
   document.getElementById('cal-month-label').textContent = String(calendarYear);
   document.getElementById('cal-month-title').textContent =
     monthDate.toLocaleDateString(undefined, { month: 'long' });
+
+  const { total, taken } = monthSummary();
+  document.getElementById('cal-summary').textContent =
+    total > 0 ? `${taken} of ${total} doses logged this month` : 'No doses due yet this month';
 
   const dowRow = document.getElementById('cal-dow-row');
   dowRow.innerHTML = ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d) => `<div class="cal-dow">${d}</div>`).join('');
@@ -208,13 +207,15 @@ function renderCalendar() {
     const dateStr = todayString(new Date(calendarYear, calendarMonth, d));
     const isToday = dateStr === today;
     const doses = dayData(dateStr);
+    const dueDoses = doses.filter((x) => x.status !== 'upcoming');
+    const isComplete = dueDoses.length > 0 && dueDoses.every((x) => x.taken);
     const dots = doses
       .filter((x) => x.taken)
       .map((x) => `<span class="cal-dot" style="background:${x.med.color}"></span>`)
       .join('');
 
     const btn = document.createElement('button');
-    btn.className = `cal-day ${isToday ? 'today' : ''}`;
+    btn.className = `cal-day ${isToday ? 'today' : ''} ${isComplete ? 'complete' : ''}`;
     btn.innerHTML = `<span>${d}</span><span class="cal-dots">${dots}</span>`;
     btn.addEventListener('click', () => openDaySheet(dateStr));
     grid.appendChild(btn);
@@ -262,19 +263,24 @@ function openDaySheet(dateStr) {
   overlay.classList.add('active');
 }
 
-// --- Add Medicine sheet ---
+// --- Add / Edit Medicine sheet ---
 
 let selectedColor = COLORS[0].hex;
+let editingId = null;
 
-function openAddSheet() {
-  document.getElementById('input-name').value = '';
-  document.getElementById('input-dose').value = '';
+function openAddSheet(medId = null) {
+  editingId = medId;
+  const editing = medId ? getMedicines().find((m) => m.id === medId) : null;
+
+  document.getElementById('sheet-title').textContent = editing ? 'Edit Medicine' : 'Add Medicine';
+  document.getElementById('input-name').value = editing ? editing.name : '';
+  document.getElementById('input-dose').value = editing ? editing.dose : '';
   document.getElementById('form-error').classList.add('hidden');
-  selectedColor = COLORS[0].hex;
+  selectedColor = editing ? editing.color : COLORS[0].hex;
 
   const swatches = document.getElementById('color-swatches');
   swatches.innerHTML = COLORS.map(
-    (c, i) => `<button type="button" class="swatch ${i === 0 ? 'selected' : ''}" data-hex="${c.hex}" style="background:${c.hex}"></button>`
+    (c) => `<button type="button" class="swatch ${c.hex === selectedColor ? 'selected' : ''}" data-hex="${c.hex}" style="background:${c.hex}"></button>`
   ).join('');
   swatches.querySelectorAll('.swatch').forEach((sw) => {
     sw.addEventListener('click', () => {
@@ -286,7 +292,11 @@ function openAddSheet() {
 
   const timesList = document.getElementById('times-list');
   timesList.innerHTML = '';
-  addTimeRow('08:00');
+  if (editing) {
+    editing.times.forEach((t) => addTimeRow(t));
+  } else {
+    addTimeRow('08:00');
+  }
 
   document.getElementById('add-sheet-overlay').classList.add('active');
 }
@@ -305,7 +315,7 @@ function addTimeRow(value) {
   timesList.appendChild(row);
 }
 
-function saveNewMedicine() {
+function saveMedicine() {
   const name = document.getElementById('input-name').value.trim();
   const dose = document.getElementById('input-dose').value.trim();
   const times = Array.from(document.querySelectorAll('#times-list input[type="time"]'))
@@ -326,13 +336,15 @@ function saveNewMedicine() {
   }
 
   const medicines = getMedicines();
-  medicines.push({
-    id: Date.now().toString(),
-    name,
-    dose,
-    color: selectedColor,
-    times,
-  });
+  if (editingId) {
+    const med = medicines.find((m) => m.id === editingId);
+    med.name = name;
+    med.dose = dose;
+    med.color = selectedColor;
+    med.times = times;
+  } else {
+    medicines.push({ id: Date.now().toString(), name, dose, color: selectedColor, times });
+  }
   saveMedicines(medicines);
   document.getElementById('add-sheet-overlay').classList.remove('active');
   renderAll();
@@ -360,9 +372,9 @@ function updateBanner() {
   });
 
   if (overdueCount > 0) {
-    banner.innerHTML = `⏰ ${overdueCount} dose${overdueCount > 1 ? 's' : ''} due — <u>go to Schedule</u>`;
+    banner.innerHTML = `⏰ ${overdueCount} dose${overdueCount > 1 ? 's' : ''} due — <u>go to Today</u>`;
     banner.classList.remove('hidden');
-    banner.onclick = () => switchTab('schedule');
+    banner.onclick = () => switchTab('today');
     return;
   }
 
@@ -423,8 +435,7 @@ function escapeHtml(str) {
 }
 
 function renderAll() {
-  renderHome();
-  renderSchedule();
+  renderToday();
   renderCalendar();
   updateBanner();
 }
@@ -434,7 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tab.addEventListener('click', () => switchTab(tab.dataset.tab));
   });
 
-  document.getElementById('add-medicine-btn').addEventListener('click', openAddSheet);
+  document.getElementById('add-medicine-btn').addEventListener('click', () => openAddSheet());
   document.getElementById('cancel-add-btn').addEventListener('click', () => {
     document.getElementById('add-sheet-overlay').classList.remove('active');
   });
@@ -445,7 +456,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.id === 'day-sheet-overlay') e.currentTarget.classList.remove('active');
   });
   document.getElementById('add-time-btn').addEventListener('click', () => addTimeRow('08:00'));
-  document.getElementById('save-medicine-btn').addEventListener('click', saveNewMedicine);
+  document.getElementById('save-medicine-btn').addEventListener('click', saveMedicine);
+  document.getElementById('cal-prev').addEventListener('click', () => {
+    calendarMonth--;
+    if (calendarMonth < 0) {
+      calendarMonth = 11;
+      calendarYear--;
+    }
+    renderCalendar();
+  });
+  document.getElementById('cal-next').addEventListener('click', () => {
+    calendarMonth++;
+    if (calendarMonth > 11) {
+      calendarMonth = 0;
+      calendarYear++;
+    }
+    renderCalendar();
+  });
 
   renderAll();
   checkDueNotifications();
