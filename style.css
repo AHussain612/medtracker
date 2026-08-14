@@ -356,8 +356,6 @@ h2.section {
   font-family: inherit;
 }
 
-.cal-day.complete { background: rgba(255, 255, 255, 0.2); }
-
 .cal-day.today {
   background: linear-gradient(135deg, var(--brand), var(--brand-2));
   color: #fff;
@@ -367,18 +365,6 @@ h2.section {
 
 .cal-day.empty { visibility: hidden; cursor: default; }
 
-.cal-dots { display: flex; gap: 2px; height: 5px; }
-.cal-dot { width: 4px; height: 4px; border-radius: 50%; }
-
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 16px;
-  margin-top: 20px;
-  padding-bottom: 6px;
-}
-
-.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--on-grad-muted); }
 .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
 /* Tab bar */

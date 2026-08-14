@@ -122,6 +122,10 @@ function renderToday() {
       const key = btn.dataset.key;
       const [medId] = key.split('|');
       const wasLogged = !!logs[key];
+      const medicines = getMedicines();
+      const med = medicines.find((m) => m.id === medId);
+
+      if (wasLogged && !confirm(`Mark ${med ? med.name : 'this dose'} as NOT taken?`)) return;
 
       if (wasLogged) {
         delete logs[key];
@@ -130,8 +134,6 @@ function renderToday() {
       }
       saveLogs(logs);
 
-      const medicines = getMedicines();
-      const med = medicines.find((m) => m.id === medId);
       if (med && med.quantity != null) {
         med.quantity = Math.max(0, med.quantity + (wasLogged ? 1 : -1));
         saveMedicines(medicines);
@@ -202,6 +204,7 @@ function dayData(dateStr) {
 
   const doses = [];
   medicines.forEach((med) => {
+    if (med.createdAt && med.createdAt > dateStr) return;
     med.times.forEach((time, i) => {
       const taken = !!logs[logKey(med.id, i, dateStr)];
       let status;
@@ -259,26 +262,19 @@ function renderCalendar() {
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = todayString(new Date(calendarYear, calendarMonth, d));
     const isToday = dateStr === today;
-    const doses = dayData(dateStr);
-    const dueDoses = doses.filter((x) => x.status !== 'upcoming');
-    const isComplete = dueDoses.length > 0 && dueDoses.every((x) => x.taken);
-    const dots = doses
-      .filter((x) => x.taken)
-      .map((x) => `<span class="cal-dot" style="background:${x.med.color}"></span>`)
-      .join('');
+    const dueDoses = dayData(dateStr).filter((x) => x.status !== 'upcoming');
+    const pct = dueDoses.length > 0 ? dueDoses.filter((x) => x.taken).length / dueDoses.length : null;
 
     const btn = document.createElement('button');
-    btn.className = `cal-day ${isToday ? 'today' : ''} ${isComplete ? 'complete' : ''}`;
-    btn.innerHTML = `<span>${d}</span><span class="cal-dots">${dots}</span>`;
+    btn.className = `cal-day ${isToday ? 'today' : ''}`;
+    if (pct !== null) {
+      btn.style.background = `rgba(255, 255, 255, ${(0.08 + pct * 0.34).toFixed(3)})`;
+    }
+    btn.innerHTML = `<span>${d}</span>`;
     btn.addEventListener('click', () => openDaySheet(dateStr));
     grid.appendChild(btn);
   }
 
-  const medicines = getMedicines();
-  const legend = document.getElementById('cal-legend');
-  legend.innerHTML = medicines
-    .map((m) => `<div class="legend-item"><span class="legend-dot" style="background:${m.color}"></span>${escapeHtml(m.name)}</div>`)
-    .join('');
 }
 
 function openDaySheet(dateStr) {
@@ -405,7 +401,7 @@ function saveMedicine() {
     med.times = times;
     med.quantity = quantity;
   } else {
-    medicines.push({ id: Date.now().toString(), name, dose, color: selectedColor, times, quantity });
+    medicines.push({ id: Date.now().toString(), name, dose, color: selectedColor, times, quantity, createdAt: todayString() });
   }
   saveMedicines(medicines);
   document.getElementById('add-sheet-overlay').classList.remove('active');
