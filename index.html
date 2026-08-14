@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <title>MedTracker</title>
+
+  <!-- Makes it launch full-screen (no Safari bars) when added to the Home Screen -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MedTracker" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="banner" class="banner hidden"></div>
+
+    <!-- HOME -->
+    <section class="screen active" id="screen-home">
+      <h1 class="title">Manage Medications</h1>
+      <h2 class="section">Today's Medications</h2>
+      <ul class="med-list" id="home-list"></ul>
+      <button class="add-btn" id="add-medicine-btn">+ &nbsp;Add Medicine</button>
+    </section>
+
+    <!-- SCHEDULE -->
+    <section class="screen" id="screen-schedule">
+      <p class="eyebrow" id="schedule-month"></p>
+      <h1 class="title" style="font-size:24px;">Today's Schedule</h1>
+      <h2 class="section" style="margin-bottom:10px;">Doses due today</h2>
+      <ul class="med-list" id="schedule-list"></ul>
+    </section>
+
+    <!-- CALENDAR -->
+    <section class="screen" id="screen-calendar">
+      <p class="eyebrow" id="cal-month-label"></p>
+      <h1 class="title" style="font-size:24px;" id="cal-month-title">Calendar</h1>
+      <div class="cal-grid" id="cal-dow-row"></div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="legend" id="cal-legend"></div>
+    </section>
+
+    <!-- TAB BAR -->
+    <nav class="tabbar">
+      <button class="tab active" data-tab="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        Home
+      </button>
+      <button class="tab" data-tab="schedule">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+        Schedule
+      </button>
+      <button class="tab" data-tab="calendar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+        Calendar
+      </button>
+    </nav>
+
+    <!-- ADD MEDICINE SHEET -->
+    <div class="sheet-overlay" id="add-sheet-overlay">
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <h3>Add Medicine</h3>
+        <div class="field">
+          <label for="input-name">Name</label>
+          <input id="input-name" placeholder="e.g. Vitamin D3" />
+        </div>
+        <div class="field">
+          <label for="input-dose">Dosage</label>
+          <input id="input-dose" placeholder="e.g. 50mg" />
+        </div>
+        <div class="field">
+          <label>Times per day</label>
+          <div class="times-list" id="times-list"></div>
+          <button class="add-time-btn" id="add-time-btn">+ Add a time</button>
+        </div>
+        <div class="field">
+          <label>Color</label>
+          <div class="swatches" id="color-swatches"></div>
+        </div>
+        <p class="error hidden" id="form-error"></p>
+        <button class="save-btn" id="save-medicine-btn">Save</button>
+        <button class="cancel-btn" id="cancel-add-btn">Cancel</button>
+      </div>
+    </div>
+
+    <!-- DAY DETAIL SHEET -->
+    <div class="sheet-overlay" id="day-sheet-overlay">
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <h3 id="day-sheet-title"></h3>
+        <p class="sheet-sub" id="day-sheet-sub"></p>
+        <div id="day-sheet-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
