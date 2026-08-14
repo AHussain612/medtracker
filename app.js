@@ -76,6 +76,11 @@ function renderToday() {
   list.innerHTML = '';
   medicines.forEach((med) => {
     const anyOverdue = med.times.some((time, i) => time <= nowHHMM && !logs[logKey(med.id, i, today)]);
+    const daysLeft = med.quantity != null ? med.quantity / med.times.length : null;
+    const qtyLine =
+      med.quantity != null
+        ? `<div class="med-qty ${daysLeft < 3 ? 'low' : ''}">${med.quantity} pill${med.quantity === 1 ? '' : 's'} left${daysLeft < 3 ? ' · refill soon' : ''}</div>`
+        : '';
 
     const li = document.createElement('li');
     li.className = `med-card${anyOverdue ? ' overdue' : ''}`;
@@ -85,6 +90,7 @@ function renderToday() {
         <div class="med-info">
           <div class="med-name"><span class="med-dot"></span>${escapeHtml(med.name)}</div>
           <div class="med-dose">${escapeHtml(med.dose || '')}${med.dose ? ' · ' : ''}${med.times.length}x daily</div>
+          ${qtyLine}
         </div>
         <div class="med-actions">
           <button class="icon-btn edit-btn" data-id="${med.id}" aria-label="Edit ${escapeHtml(med.name)}">✎</button>
@@ -108,12 +114,23 @@ function renderToday() {
     btn.addEventListener('click', () => {
       const logs = getLogs();
       const key = btn.dataset.key;
-      if (logs[key]) {
+      const [medId] = key.split('|');
+      const wasLogged = !!logs[key];
+
+      if (wasLogged) {
         delete logs[key];
       } else {
         logs[key] = true;
       }
       saveLogs(logs);
+
+      const medicines = getMedicines();
+      const med = medicines.find((m) => m.id === medId);
+      if (med && med.quantity != null) {
+        med.quantity = Math.max(0, med.quantity + (wasLogged ? 1 : -1));
+        saveMedicines(medicines);
+      }
+
       renderToday();
       renderCalendar();
       updateBanner();
@@ -275,6 +292,7 @@ function openAddSheet(medId = null) {
   document.getElementById('sheet-title').textContent = editing ? 'Edit Medicine' : 'Add Medicine';
   document.getElementById('input-name').value = editing ? editing.name : '';
   document.getElementById('input-dose').value = editing ? editing.dose : '';
+  document.getElementById('input-quantity').value = editing && editing.quantity != null ? editing.quantity : '';
   document.getElementById('form-error').classList.add('hidden');
   selectedColor = editing ? editing.color : COLORS[0].hex;
 
@@ -318,6 +336,7 @@ function addTimeRow(value) {
 function saveMedicine() {
   const name = document.getElementById('input-name').value.trim();
   const dose = document.getElementById('input-dose').value.trim();
+  const quantityRaw = document.getElementById('input-quantity').value.trim();
   const times = Array.from(document.querySelectorAll('#times-list input[type="time"]'))
     .map((input) => input.value)
     .filter(Boolean)
@@ -335,6 +354,12 @@ function saveMedicine() {
     return;
   }
 
+  let quantity = null;
+  if (quantityRaw !== '') {
+    const parsed = parseInt(quantityRaw, 10);
+    quantity = Number.isNaN(parsed) ? null : Math.max(0, parsed);
+  }
+
   const medicines = getMedicines();
   if (editingId) {
     const med = medicines.find((m) => m.id === editingId);
@@ -342,8 +367,9 @@ function saveMedicine() {
     med.dose = dose;
     med.color = selectedColor;
     med.times = times;
+    med.quantity = quantity;
   } else {
-    medicines.push({ id: Date.now().toString(), name, dose, color: selectedColor, times });
+    medicines.push({ id: Date.now().toString(), name, dose, color: selectedColor, times, quantity });
   }
   saveMedicines(medicines);
   document.getElementById('add-sheet-overlay').classList.remove('active');
