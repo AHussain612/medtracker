@@ -267,10 +267,12 @@ function renderCalendar() {
 
     const btn = document.createElement('button');
     btn.className = `cal-day ${isToday ? 'today' : ''}`;
-    if (pct !== null) {
-      btn.style.background = `rgba(255, 255, 255, ${(0.08 + pct * 0.34).toFixed(3)})`;
+    if (pct !== null && !isToday) {
+      btn.style.background =
+        pct === 0 ? 'rgba(220, 38, 38, 0.25)' : `rgba(34, 197, 94, ${(0.2 + pct * 0.55).toFixed(3)})`;
     }
-    btn.innerHTML = `<span>${d}</span>`;
+    const checkMark = pct === 1 ? '<span class="cal-check">✓</span>' : '';
+    btn.innerHTML = `<span>${d}</span>${checkMark}`;
     btn.addEventListener('click', () => openDaySheet(dateStr));
     grid.appendChild(btn);
   }

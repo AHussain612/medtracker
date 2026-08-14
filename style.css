@@ -365,6 +365,8 @@ h2.section {
 
 .cal-day.empty { visibility: hidden; cursor: default; }
 
+.cal-check { font-size: 9px; font-weight: 800; line-height: 1; }
+
 .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
 /* Tab bar */
